@@ -1,3 +1,5 @@
+module RoseTree where
+
 data Rose a = Node a [Rose a]
 
 -- e) napisati funkciju foldRose koja izršava fold (levi ili desni) na svim čvorovima
