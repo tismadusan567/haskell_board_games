@@ -58,7 +58,7 @@ nextPlayer P2 = P1
 
 data BoardState a = BoardState Player [[a]] deriving (Show)
 
-data GameMove = GameMove Player (Int, Int) deriving (Show)
+data GameMove = GameMove Player (Int, Int) deriving (Show, Eq)
 
 -- GameStateOp
 
@@ -143,8 +143,9 @@ showXOState (BoardState _ board) = board >>= showRow
 -- Napraviti funkciju koja vraća sve validne poteze u igri Iks-oks za neku datu tablu
 
 validMoves :: BoardState XOField -> [GameMove]
-validMoves (BoardState player board) =
-    [GameMove player (rowIndex, colIndex) |
+validMoves state@(BoardState player board) 
+    | isFinished state = []
+    | otherwise = [GameMove player (rowIndex, colIndex) |
     (rowIndex, row) <- zip [0..] board,
     (colIndex, el) <- zip [0..] row,
     el == P]
@@ -225,8 +226,10 @@ charToPlayer 'X' = P1
 charToPlayer 'O' = P2
 charToPlayer _ = P1
 
-getPlayer :: GameMove -> Player
-getPlayer (GameMove player _) = player
+determinePlayer :: [[XOField]] -> Player
+determinePlayer board
+    | length (filter (==X) $ concat board) == length (filter (==O) $ concat board) = P1
+    | otherwise = P2
 
 parseField :: Parsec String () XOField
 parseField = do
@@ -257,13 +260,26 @@ parseBoard :: Parsec String () (BoardState XOField, [GameMove])
 parseBoard = do
     board <- count 3 parseRow
     moves <- many parseMove
-    return (BoardState (getPlayer . head $ moves) board, moves)
+    return (BoardState (determinePlayer board) board, moves)
 
 main = do
     s <- readFile "board.txt"
     if null s
         then return ()
         else do case runParser parseBoard () "" s of
-                        Right r -> print r
+                        Right (state, moves) -> print $ stateAfterMoves state moves
                         Left err -> print err
-                
+
+
+-- Napisati funkciju koja vraća stanje na tabli koje se dobija posle izvršavanja svih
+-- navedenih poteza redom. Ukoliko je neki od navedenih poteza nevalidan vratiti
+-- odgovarajuću vrednost (na primer Nothing).
+
+maybePlayMove :: Maybe (BoardState XOField) -> GameMove -> Maybe (BoardState XOField)
+maybePlayMove Nothing move = Nothing
+maybePlayMove (Just state) move
+    | move `elem` validMoves state = Just (playMove state move)
+    | otherwise = Nothing
+
+stateAfterMoves :: BoardState XOField -> [GameMove] -> Maybe (BoardState XOField)
+stateAfterMoves state = foldl maybePlayMove (Just state)
