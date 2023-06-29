@@ -1,5 +1,6 @@
 import Data.List (transpose)
-data Rose a = Node a [Rose a]
+
+data Rose a = Node a [Rose a] deriving (Show)
 
 -- 1. Struktura podataka Rose tree (10p)
 
@@ -48,9 +49,13 @@ test = Node 1 [Node 2 [Node 3 []], Node 4 [], Node 5 [Node 6 [], Node 7 []], Nod
 
 -- 2. Predstavljanje stanja u igri (10p)
 
-data Player = First | Second deriving (Show)
+data Player = First | Second deriving (Show, Eq)
 
-data BoardState a = BoardState Player [[a]]
+nextPlayer :: Player -> Player
+nextPlayer First = Second
+nextPlayer Second = First
+
+data BoardState a = BoardState Player [[a]] deriving (Show)
 
 data GameMove = GameMove Player (Int, Int) deriving (Show)
 
@@ -111,21 +116,50 @@ instance Monad (GameStateOpHistory s) where
 
 -- 3. Primena kreiranih tipova na primeru igre Iks-Oks (12p)
 
-data XOPolje = X | O | P deriving (Eq)
+data XOField = X | O | P deriving (Show, Eq)
 
-validMoves :: BoardState XOPolje -> [GameMove]
-validMoves (BoardState player board) = [GameMove player (rowIndex, colIndex) |
+playerToXOField :: Player -> XOField
+playerToXOField First = X
+playerToXOField Second = O
+
+-- Napraviti funkciju koja vraća sve validne poteze u igri Iks-oks za neku datu tablu
+
+validMoves :: BoardState XOField -> [GameMove]
+validMoves (BoardState player board) =
+    [GameMove player (rowIndex, colIndex) |
     (rowIndex, row) <- zip [0..] board,
     (colIndex, el) <- zip [0..] row,
     el == P]
 
-isFinished :: BoardState XOPolje -> Bool
-isFinished (BoardState _ board) = 
-    P `notElem` concat board 
+-- zatim funkciju koja vraća novo stanje table primenom jednog poteza
+
+playMove :: BoardState XOField -> GameMove ->  BoardState XOField
+playMove (BoardState player board) (GameMove movePlayer (newRowIndex, newColIndex))
+    | movePlayer /= player = error "Mismatched move and state players"
+    | otherwise = BoardState (nextPlayer player) newBoard
+        where newBoard = [if rowIndex /= newRowIndex then row else transformRow row | (rowIndex, row) <- zip [0..] board]
+              transformRow row = [if colIndex /= newColIndex then el else playerToXOField player | (colIndex, el) <- zip [0..] row]
+
+-- Napisati funkciju koja proverava da li je tabla u završnom stanju, to znači da je ili
+-- jedan od igrača povezao tri simbola ili da je tabla popunjena, a da niko nije pobedio.
+
+isFinished :: BoardState XOField -> Bool
+isFinished (BoardState _ board) =
+    P `notElem` concat board
     || any checkSeq board
     || any checkSeq (transpose board)
-    || checkSeq [el | (rowIndex, row) <- zip [0..] board, (colIndex, el) <- zip [0..] row, rowIndex == colIndex]
-    || checkSeq [el | (rowIndex, row) <- zip [0..] board, (colIndex, el) <- zip [0..] row, rowIndex + colIndex + 1 == length row]
+    || checkSeq mainDiagonal
+    || checkSeq secondaryDiagonal
     where checkSeq seq = all (X==) seq || all (O==) seq
+          mainDiagonal = [el | (rowIndex, row) <- zip [0..] board, (colIndex, el) <- zip [0..] row, rowIndex == colIndex]
+          secondaryDiagonal = [el | (rowIndex, row) <- zip [0..] board, (colIndex, el) <- zip [0..] row, rowIndex + colIndex + 1 == length row]
+
+-- Korišćenje strukture podataka Rose (tačka 1) napraviti funkciju koja za proizvoljno
+-- početno stanje table kreira stablo igre
+
+createGameTree :: BoardState XOField -> Rose (BoardState XOField)
+createGameTree state
+    | isFinished state = Node state []
+    | otherwise = Node state $ map (createGameTree . playMove state) (validMoves state)
 
 testState = BoardState First [[P,P,P],[X,P,O],[P,X,P]]
