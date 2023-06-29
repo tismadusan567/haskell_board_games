@@ -1,4 +1,5 @@
 import Data.List (transpose)
+import Text.Parsec
 
 data Rose a = Node a [Rose a] deriving (Show)
 
@@ -118,11 +119,17 @@ instance Monad (GameStateOpHistory s) where
 
 -- 3. Primena kreiranih tipova na primeru igre Iks-Oks (12p)
 
-data XOField = X | O | P deriving (Show, Eq)
+data XOField = X | O | P deriving (Eq)
+
+instance Show XOField where
+    show X = "X"
+    show O = "0"
+    show P = " "
 
 playerToXOField :: Player -> XOField
 playerToXOField P1 = X
 playerToXOField P2 = O
+
 
 -- Napraviti ispis iks-oks table u sledećem formatu:
 
@@ -206,4 +213,57 @@ applyMovesH = do
     applyMoveH (1,0)
     applyMoveH (0,0)
 
+-- Parsiranje podataka o stanju na tabli i potezima u igri Iks-Oks (6p)
 
+charToXOField :: Char -> XOField
+charToXOField 'X' = X
+charToXOField 'O' = O
+charToXOField _ = P
+
+charToPlayer :: Char -> Player
+charToPlayer 'X' = P1
+charToPlayer 'O' = P2
+charToPlayer _ = P1
+
+getPlayer :: GameMove -> Player
+getPlayer (GameMove player _) = player
+
+parseField :: Parsec String () XOField
+parseField = do
+    c <- oneOf " XO"
+    char '|'
+    return (charToXOField c)
+
+parseRow :: Parsec String () [XOField]
+parseRow = do
+    char '|'
+    row <- count 3 parseField
+    choice [endOfLine, eof >> return ' ']
+    return row
+
+parseMove :: Parsec String () GameMove
+parseMove = do
+    c <- oneOf " XO"
+    space
+    char '('
+    row <- digit
+    char ','
+    col <- digit
+    char ')'
+    choice [endOfLine, eof >> return ' ']
+    return $ GameMove (charToPlayer c) (read [row], read [col])
+
+parseBoard :: Parsec String () (BoardState XOField, [GameMove])
+parseBoard = do
+    board <- count 3 parseRow
+    moves <- many parseMove
+    return (BoardState (getPlayer . head $ moves) board, moves)
+
+main = do
+    s <- readFile "board.txt"
+    if null s
+        then return ()
+        else do case runParser parseBoard () "" s of
+                        Right r -> print r
+                        Left err -> print err
+                
