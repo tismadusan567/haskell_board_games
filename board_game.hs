@@ -19,7 +19,7 @@ foldRose f acc (Node val children) = foldl (foldRose f) (f acc val) children
 -- lista
 
 size :: Rose a -> Int
-size = foldRose (\acc el -> acc + 1) 0
+size = foldRose (\acc _ -> acc + 1) 0
 
 height :: Rose a -> Int
 height (Node _ []) = 0
@@ -45,6 +45,7 @@ elemsOnDepth depth (Node _ children) = children >>= elemsOnDepth (depth - 1)
 -- d) instancirati tipsku klasu Functor za tip podataka Rose
 
 instance Functor Rose where
+    fmap :: (a -> b) -> Rose a -> Rose b
     fmap f (Node val children) = Node (f val) $ map (fmap f) children
 
 test = Node 1 [Node 2 [Node 3 []], Node 4 [], Node 5 [Node 6 [], Node 7 []], Node 8 [Node 9 [Node 10 []], Node 11 []]]
@@ -82,6 +83,7 @@ instance Applicative (GameStateOp s) where
 instance Monad (GameStateOp s) where
     return :: a -> GameStateOp s a
     return = pure
+
     (>>=) :: GameStateOp s a -> (a -> GameStateOp s b) -> GameStateOp s b
     (GameStateOp op) >>= f = GameStateOp $ \state ->
         let (a, newState) = op state
@@ -124,13 +126,12 @@ data XOField = X | O | P deriving (Eq)
 
 instance Show XOField where
     show X = "X"
-    show O = "0"
+    show O = "O"
     show P = " "
 
 playerToXOField :: Player -> XOField
 playerToXOField P1 = X
 playerToXOField P2 = O
-
 
 -- Napraviti ispis iks-oks table u sledećem formatu:
 
