@@ -1,5 +1,6 @@
 import Data.List (transpose)
 import Text.Parsec
+import Control.Monad (foldM)
 
 data Rose a = Node a [Rose a] deriving (Show)
 
@@ -143,7 +144,7 @@ showXOState (BoardState _ board) = board >>= showRow
 -- Napraviti funkciju koja vraća sve validne poteze u igri Iks-oks za neku datu tablu
 
 validMoves :: BoardState XOField -> [GameMove]
-validMoves state@(BoardState player board) 
+validMoves state@(BoardState player board)
     | isFinished state = []
     | otherwise = [GameMove player (rowIndex, colIndex) |
     (rowIndex, row) <- zip [0..] board,
@@ -283,3 +284,8 @@ maybePlayMove (Just state) move
 
 stateAfterMoves :: BoardState XOField -> [GameMove] -> Maybe (BoardState XOField)
 stateAfterMoves state = foldl maybePlayMove (Just state)
+
+-- stateAfterMovesM :: BoardState XOField -> [GameMove] -> (Bool, BoardState XOField)
+-- stateAfterMovesM state ((GameMove _ pos):moves) = 
+--     runGameState (foldl (\acc (GameMove _ pos) -> acc >> applyMove pos) (applyMove pos) moves) state
+    
