@@ -124,6 +124,15 @@ playerToXOField :: Player -> XOField
 playerToXOField P1 = X
 playerToXOField P2 = O
 
+-- Napraviti ispis iks-oks table u sledećem formatu:
+
+showXOState :: BoardState XOField -> String
+showXOState (BoardState _ board) = board >>= showRow
+    where showRow row = concatMap (("|"++) . show) row ++ "|\n"
+
+-- instance Show (BoardState XOField) where
+--     show state@(BoardState player board) = show player ++ "\n" ++ showXOState state
+
 -- Napraviti funkciju koja vraća sve validne poteze u igri Iks-oks za neku datu tablu
 
 validMoves :: BoardState XOField -> [GameMove]
