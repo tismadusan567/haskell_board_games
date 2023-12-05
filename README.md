@@ -1,6 +1,6 @@
 # haskell-board-games
 
-Haskell board games is a tool for analysing game trees of different board games. Currently only tic tac toe is supported
+Haskell board games is a tool for analysing game trees of different board games. Currently only tic-tac-toe is supported
 
 ## Installation
 
@@ -8,10 +8,10 @@ Install [GHCi](https://downloads.haskell.org/ghc/latest/docs/users_guide/ghci.ht
 
 ## Usage
 
-foldRose, height, size, leaves, leavesCount, elemsOnDepth - tree operations
+foldRose, height, size, leaves, leavesCount, elemsOnDepth - tree operations.
 
-BoardState is a monad containing current player and list of board fields representing the current game state
+BoardState is a monad containing current player and list of board fields representing the current game state.
 
-validMoves, playMove, isFinished, createGameTree - operations on BoardState
+validMoves, playMove, isFinished, createGameTree - operations on BoardState.
 
-Chain applyMove operations using bind to simulate a game
+Chain applyMove operations using bind to simulate a game.
