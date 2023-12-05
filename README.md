@@ -1,6 +1,6 @@
 # haskell-board-games
 
-Haskell-board-games is a tool for analysing game trees of different board games. Currently only tic tac toe is supported
+Haskell board games is a tool for analysing game trees of different board games. Currently only tic tac toe is supported
 
 ## Installation
 
